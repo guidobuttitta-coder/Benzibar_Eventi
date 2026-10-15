@@ -289,6 +289,9 @@
             registrations: {}
         };
 
+        // Inizializzazione immediata della vista Home per evitare qualsiasi blocco sui tasti
+        updateHomeView();
+
         if (dbRef) {
             dbRef.on('value', (snapshot) => {
                 const data = snapshot.val() || {};
@@ -296,7 +299,8 @@
                 db.events = data.events || {};
                 db.registrations = data.registrations || {};
                 
-                document.getElementById('sync-indicator').innerText = "🟢 Connessione Cloud Attiva";
+                const indicator = document.getElementById('sync-indicator');
+                if (indicator) indicator.innerText = "🟢 Connessione Cloud Attiva";
 
                 syncLocalUserToCloud();
                 updateHomeView();
@@ -314,7 +318,8 @@
                 }
             }, (error) => {
                 console.error("Errore sincronizzazione Firebase:", error);
-                document.getElementById('sync-indicator').innerText = "🔴 Disconnesso (offline)";
+                const indicator = document.getElementById('sync-indicator');
+                if (indicator) indicator.innerText = "🔴 Disconnesso (offline)";
             });
         }
 
@@ -329,7 +334,10 @@
 
         function goToScreen(screenId) {
             document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-            document.getElementById(screenId).classList.remove('hidden');
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.remove('hidden');
+            }
             if (screenId === 'screen-home') {
                 updateHomeView();
             } else if (screenId === 'screen-events') {
@@ -343,13 +351,15 @@
             const activeSection = document.getElementById('user-active-events-section');
             const listDiv = document.getElementById('home-user-events-list');
             
+            if (!infoBar) return;
+
             if (localUserProfile && localUserProfile.name) {
                 infoBar.innerText = `Ciao, ${localUserProfile.name} ${localUserProfile.surname}!`;
-                resetBtn.classList.remove('hidden');
+                if (resetBtn) resetBtn.classList.remove('hidden');
             } else {
                 infoBar.innerText = '';
-                resetBtn.classList.add('hidden');
-                activeSection.classList.add('hidden');
+                if (resetBtn) resetBtn.classList.add('hidden');
+                if (activeSection) activeSection.classList.add('hidden');
                 return;
             }
 
@@ -357,16 +367,16 @@
 
             const userRegKeys = Object.keys(db.registrations).filter(k => {
                 const reg = db.registrations[k];
-                return cleanPhoneKey(reg.userPhone) === currentPhoneKey;
+                return reg && cleanPhoneKey(reg.userPhone) === currentPhoneKey;
             });
             
             if (userRegKeys.length === 0) {
-                activeSection.classList.add('hidden');
-                listDiv.innerHTML = '';
+                if (activeSection) activeSection.classList.add('hidden');
+                if (listDiv) listDiv.innerHTML = '';
                 return;
             }
 
-            activeSection.classList.remove('hidden');
+            if (activeSection) activeSection.classList.remove('hidden');
             let html = '';
 
             userRegKeys.forEach(key => {
@@ -387,7 +397,7 @@
                 }
             });
 
-            listDiv.innerHTML = html;
+            if (listDiv) listDiv.innerHTML = html;
         }
 
         function resetLocalProfile() {
@@ -400,9 +410,483 @@
         }
 
         function openStaffLogin() {
-            document.getElementById('staff-password').value = '';
+            const passInput = document.getElementById('staff-password');
+            if (passInput) passInput.value = '';
             goToScreen('screen-staff-login');
         }
 
         function verifyStaffPassword() {
-            const pass = document.getElementById('staff-password').value;
+            const passInput = document.getElementById('staff-password');
+            const pass = passInput ? passInput.value : '';
+            if (pass === 'BENZIBAR') {
+                goToScreen('screen-staff-dashboard');
+            } else {
+                alert('Password errata!');
+            }
+        }
+
+        let uploadedImageBase64 = "";
+        const imgFileInput = document.getElementById('event-img-file');
+        if (imgFileInput) {
+            imgFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(uploadEvent) {
+                        uploadedImageBase64 = uploadEvent.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function createNewEvent() {
+            const datetimeInput = document.getElementById('event-datetime');
+            const typeInput = document.getElementById('event-type');
+            const datetime = datetimeInput ? datetimeInput.value.trim() : '';
+            const type = typeInput ? typeInput.value : 'Torneo Burraco';
+
+            if (!datetime) {
+                alert('Inserisci data e orario dell\'evento.');
+                return;
+            }
+
+            const newId = 'ev_' + Date.now();
+            const newEventObj = {
+                id: newId,
+                img: uploadedImageBase64,
+                datetime: datetime,
+                type: type
+            };
+
+            if (dbRef) {
+                dbRef.child('events').child(newId).set(newEventObj);
+            }
+
+            alert('Evento pubblicato! Sarà visibile su tutti i telefoni.');
+            uploadedImageBase64 = "";
+            if (imgFileInput) imgFileInput.value = "";
+            if (datetimeInput) datetimeInput.value = "";
+            goToScreen('screen-staff-dashboard');
+        }
+
+        function showRegisteredUsersTable(changeScreen = true) {
+            if (changeScreen) goToScreen('screen-staff-management');
+            const titleEl = document.getElementById('staff-management-title');
+            if (titleEl) titleEl.innerText = 'UTENTI REGISTRATI';
+            const container = document.getElementById('staff-management-content');
+            if (!container) return;
+
+            const usersList = Object.values(db.users);
+            if (usersList.length === 0) {
+                container.innerHTML = '<p>Nessun utente registrato finora nel database.</p>';
+                return;
+            }
+
+            let html = `
+                <button onclick="exportTableToCSV('users-table', 'utenti_registrati.csv')" style="margin-bottom:10px;">SCARICA EXCEL (CSV)</button>
+                <table id="users-table">
+                    <tr><th>Nome</th><th>Cognome</th><th>Telefono</th></tr>
+            `;
+            usersList.forEach(u => {
+                html += `<tr><td>${u.name || '-'}</td><td>${u.surname || '-'}</td><td>${u.phone || '-'}</td></tr>`;
+            });
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function showStaffEventsList(changeScreen = true) {
+            if (changeScreen) goToScreen('screen-staff-management');
+            const titleEl = document.getElementById('staff-management-title');
+            if (titleEl) titleEl.innerText = 'GESTIONE EVENTI';
+            const container = document.getElementById('staff-management-content');
+            if (!container) return;
+
+            const eventsList = Object.values(db.events);
+            if (eventsList.length === 0) {
+                container.innerHTML = '<p>Nessun evento creato.</p>';
+                return;
+            }
+
+            let html = '';
+            eventsList.forEach(ev => {
+                const eventRegs = Object.values(db.registrations).filter(r => r.eventId === ev.id);
+                
+                let totalCount = eventRegs.length;
+                if (ev.type === 'Altro Evento') {
+                    eventRegs.forEach(r => { totalCount += (parseInt(r.companions) || 0); });
+                } else {
+                    eventRegs.forEach(r => { if(r.partner && r.partner !== 'Senza compagno') totalCount += 1; });
+                }
+
+                html += `
+                    <div class="event-card">
+                        ${ev.img ? `<img src="${ev.img}" alt="Locandina">` : ''}
+                        <h3>${ev.type}</h3>
+                        <p><b>Data/Ora:</b> ${ev.datetime}</p>
+                        <p><b>Iscritti Totali:</b> ${totalCount}</p>
+                        <button onclick="openEditEvent('${ev.id}')">MODIFICA EVENTO</button>
+                        <button onclick="deleteEvent('${ev.id}')" style="background-color: #a97676;">CANCELLA EVENTO</button>
+                        <button onclick="showEventRegistrations('${ev.id}')">ELENCO ISCRITTI</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function deleteEvent(eventId) {
+            if (confirm('Vuoi davvero cancellare questo evento da tutti i dispositivi?')) {
+                if (dbRef) {
+                    dbRef.child('events').child(eventId).remove();
+                    Object.keys(db.registrations).forEach(k => {
+                        if (db.registrations[k].eventId === eventId) {
+                            dbRef.child('registrations').child(k).remove();
+                        }
+                    });
+                }
+                showStaffEventsList(false);
+            }
+        }
+
+        function openEditEvent(eventId) {
+            const ev = db.events[eventId];
+            if (!ev) return;
+            const newDatetime = prompt('Modifica Data e Orario:', ev.datetime);
+            const newType = prompt('Modifica Tipo ("Torneo Burraco" o "Altro Evento"):', ev.type);
+            if (newDatetime && newType && dbRef) {
+                dbRef.child('events').child(eventId).update({
+                    datetime: newDatetime,
+                    type: newType
+                });
+                showStaffEventsList(false);
+            }
+        }
+
+        function showEventRegistrations(eventId) {
+            const ev = db.events[eventId];
+            const eventRegs = Object.values(db.registrations).filter(r => r.eventId === eventId);
+            const container = document.getElementById('staff-management-content');
+            if (!container) return;
+
+            if (eventRegs.length === 0) {
+                container.innerHTML = `<button onclick="showStaffEventsList()" style="margin-bottom:10px;">Indietro</button><p>Nessun iscritto per questo evento.</p>`;
+                return;
+            }
+
+            let tableId = 'event-regs-table';
+            let html = `<button onclick="showStaffEventsList()" style="margin-bottom:10px;">Indietro</button>`;
+            html += `<button onclick="exportTableToCSV('${tableId}', 'elenco_iscritti_${ev.id}.csv')" style="margin-bottom:10px;">SCARICA EXCEL (CSV)</button>`;
+            
+            if (ev.type === 'Torneo Burraco') {
+                html += `
+                    <table id="${tableId}">
+                        <tr><th>Nome Cognome</th><th>Telefono</th><th>Compagno (Nome Cognome)</th></tr>
+                `;
+                eventRegs.forEach(r => {
+                    const cleanP = cleanPhoneKey(r.userPhone);
+                    const u = db.users[cleanP] || db.users[r.userPhone];
+                    
+                    let fullName = (r.userName && r.userSurname) 
+                        ? `${r.userName} ${r.userSurname}` 
+                        : (u ? `${u.name} ${u.surname}` : 'Utente Sconosciuto');
+                    
+                    html += `<tr><td>${fullName}</td><td>${r.userPhone || '-'}</td><td>${r.partner || 'Senza compagno'}</td></tr>`;
+                });
+            } else {
+                html += `
+                    <table id="${tableId}">
+                        <tr><th>Nome Cognome</th><th>Telefono</th><th>Accompagnatori</th></tr>
+                `;
+                eventRegs.forEach(r => {
+                    const cleanP = cleanPhoneKey(r.userPhone);
+                    const u = db.users[cleanP] || db.users[r.userPhone];
+
+                    let fullName = (r.userName && r.userSurname) 
+                        ? `${r.userName} ${r.userSurname}` 
+                        : (u ? `${u.name} ${u.surname}` : 'Utente Sconosciuto');
+                    
+                    html += `<tr><td>${fullName}</td><td>${r.userPhone || '-'}</td><td>${r.companions || 0}</td></tr>`;
+                });
+            }
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            let csv = [];
+            for (let i = 0; i < table.rows.length; i++) {
+                let row = [], cols = table.rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) 
+                    row.push('"' + cols[j].innerText + '"');
+                csv.push(row.join(","));
+            }
+            let csvFile = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+            let downloadLink = document.createElement("a");
+            downloadLink.download = filename;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        function accessEventsFlow() {
+            if (localUserProfile && localUserProfile.phone && localUserProfile.name) {
+                goToScreen('screen-events');
+            } else {
+                goToScreen('screen-user-register');
+            }
+        }
+
+        function saveUserProfile() {
+            const nameEl = document.getElementById('reg-name');
+            const surnameEl = document.getElementById('reg-surname');
+            const phoneEl = document.getElementById('reg-phone');
+
+            const name = nameEl ? nameEl.value.trim() : '';
+            const surname = surnameEl ? surnameEl.value.trim() : '';
+            const phone = phoneEl ? phoneEl.value.trim() : '';
+
+            if (!name || !surname || !phone) {
+                alert('Tutti i campi (Nome, Cognome, Telefono) sono obbligatori.');
+                return;
+            }
+
+            localUserProfile = { name, surname, phone };
+            localStorage.setItem('benzibar_user_profile', JSON.stringify(localUserProfile));
+
+            const key = cleanPhoneKey(phone);
+            if (dbRef && key) {
+                dbRef.child('users').child(key).set(localUserProfile);
+            }
+
+            alert('Registrazione completata con successo!');
+            goToScreen('screen-events');
+        }
+
+        function renderPublicEvents() {
+            const container = document.getElementById('public-events-list');
+            if (!container) return;
+            const eventsList = Object.values(db.events);
+
+            if (eventsList.length === 0) {
+                container.innerHTML = '<p>Nessun evento disponibile al momento. Torna a controllare presto!</p>';
+                return;
+            }
+
+            const currentPhoneKey = localUserProfile ? cleanPhoneKey(localUserProfile.phone) : '';
+
+            let html = '';
+            eventsList.forEach(ev => {
+                const regKey = Object.keys(db.registrations).find(k => {
+                    const r = db.registrations[k];
+                    return r && r.eventId === ev.id && cleanPhoneKey(r.userPhone) === currentPhoneKey;
+                });
+
+                const userReg = regKey ? db.registrations[regKey] : null;
+                const isEnrolled = !!userReg;
+
+                html += `
+                    <div class="event-card">
+                        ${ev.img ? `<img src="${ev.img}" alt="Locandina">` : ''}
+                        <h3>${ev.type}</h3>
+                        <p><b>Data/Ora:</b> ${ev.datetime}</p>
+                        ${isEnrolled ? '<span class="badge-enrolled">ISCRITTO</span>' : ''}
+                `;
+
+                if (ev.type === 'Torneo Burraco') {
+                    const partnerVal = userReg ? (userReg.partner === 'Senza compagno' ? '' : (userReg.partner || '')) : '';
+                    const noPartnerChecked = userReg && userReg.withoutPartner ? 'checked' : '';
+                    html += `
+                        <div id="burraco-form-${ev.id}">
+                            <div class="inline-label">
+                                <span>Compagno (facoltativo):</span>
+                                <label><input type="checkbox" id="nopot-${ev.id}" ${noPartnerChecked} onchange="toggleNoPartner('${ev.id}')"> senza compagno</label>
+                            </div>
+                            <input type="text" id="partner-${ev.id}" value="${partnerVal}" placeholder="Nome Cognome Compagno" ${noPartnerChecked ? 'disabled' : ''}>
+                            <button onclick="participateBurraco('${ev.id}')">${isEnrolled ? 'AGGIORNA ISCRIZIONE' : 'ISCRIVIMI'}</button>
+                        </div>
+                    `;
+                } else {
+                    const compCount = userReg ? (userReg.companions || 0) : 0;
+                    html += `
+                        <div id="altro-form-${ev.id}">
+                            <label>Numero di Accompagnatori (facoltativo):</label>
+                            <input type="number" id="companions-${ev.id}" min="0" value="${compCount}" placeholder="0">
+                            <button onclick="participateAltro('${ev.id}')">${isEnrolled ? 'AGGIORNA ISCRIZIONE' : 'ISCRIVIMI'}</button>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleNoPartner(eventId) {
+            const checkbox = document.getElementById(`nopot-${eventId}`);
+            const inputField = document.getElementById(`partner-${eventId}`);
+            if (checkbox && inputField) {
+                if (checkbox.checked) {
+                    inputField.value = '';
+                    inputField.disabled = true;
+                } else {
+                    inputField.disabled = false;
+                }
+            }
+        }
+
+        function participateBurraco(eventId) {
+            if (!localUserProfile || !localUserProfile.phone) {
+                alert('Effettua prima la registrazione con Nome, Cognome e Telefono!');
+                goToScreen('screen-user-register');
+                return;
+            }
+
+            const partnerInput = document.getElementById(`partner-${eventId}`);
+            const noPartnerCheckbox = document.getElementById(`nopot-${eventId}`);
+            const partnerName = (noPartnerCheckbox && noPartnerCheckbox.checked) ? 'Senza compagno' : (partnerInput ? partnerInput.value.trim() : '');
+
+            const phoneKey = cleanPhoneKey(localUserProfile.phone);
+            const regId = 'reg_' + eventId + '_' + phoneKey;
+
+            const regObj = {
+                eventId: eventId,
+                userPhone: localUserProfile.phone,
+                userName: localUserProfile.name,
+                userSurname: localUserProfile.surname,
+                partner: partnerName,
+                withoutPartner: (noPartnerCheckbox ? noPartnerCheckbox.checked : false)
+            };
+
+            if (dbRef) {
+                dbRef.child('registrations').child(regId).set(regObj);
+                dbRef.child('users').child(phoneKey).set(localUserProfile);
+            }
+
+            alert('Iscrizione salvata e inviata allo staff!');
+            renderPublicEvents();
+            updateHomeView();
+        }
+
+        function participateAltro(eventId) {
+            if (!localUserProfile || !localUserProfile.phone) {
+                alert('Effettua prima la registrazione con Nome, Cognome e Telefono!');
+                goToScreen('screen-user-register');
+                return;
+            }
+
+            const companionsInput = document.getElementById(`companions-${eventId}`);
+            const companionsCount = companionsInput ? (parseInt(companionsInput.value) || 0) : 0;
+
+            const phoneKey = cleanPhoneKey(localUserProfile.phone);
+            const regId = 'reg_' + eventId + '_' + phoneKey;
+
+            const regObj = {
+                eventId: eventId,
+                userPhone: localUserProfile.phone,
+                userName: localUserProfile.name,
+                userSurname: localUserProfile.surname,
+                companions: companionsCount
+            };
+
+            if (dbRef) {
+                dbRef.child('registrations').child(regId).set(regObj);
+                dbRef.child('users').child(phoneKey).set(localUserProfile);
+            }
+
+            alert('Iscrizione salvata e inviata allo staff!');
+            renderPublicEvents();
+            updateHomeView();
+        }
+
+        function cancelRegistration(eventId) {
+            if (confirm('Vuoi davvero cancellare l\'iscrizione a questo evento?')) {
+                const phoneKey = cleanPhoneKey(localUserProfile ? localUserProfile.phone : '');
+                const regId = 'reg_' + eventId + '_' + phoneKey;
+
+                if (dbRef) {
+                    dbRef.child('registrations').child(regId).remove();
+                }
+
+                updateHomeView();
+                renderPublicEvents();
+            }
+        }
+
+        function openEditParticipation(eventId) {
+            const phoneKey = cleanPhoneKey(localUserProfile ? localUserProfile.phone : '');
+            const regId = 'reg_' + eventId + '_' + phoneKey;
+            const userReg = db.registrations[regId];
+            const ev = db.events[eventId];
+            
+            if (!userReg) {
+                alert('Iscrizione non trovata.');
+                return;
+            }
+
+            goToScreen('screen-edit-participation');
+            const container = document.getElementById('edit-participation-form-container');
+            if (!container) return;
+
+            if (ev.type === 'Torneo Burraco') {
+                container.innerHTML = `
+                    <h3>Modifica ${ev.type}</h3>
+                    <div class="inline-label">
+                        <span>Compagno (facoltativo):</span>
+                        <label><input type="checkbox" id="edit-nopot" ${userReg.partner === 'Senza compagno' ? 'checked' : ''} onchange="document.getElementById('edit-partner').disabled=this.checked"> senza compagno</label>
+                    </div>
+                    <input type="text" id="edit-partner" value="${userReg.partner === 'Senza compagno' ? '' : (userReg.partner || '')}" placeholder="Nome Cognome Compagno" ${userReg.partner === 'Senza compagno' ? 'disabled' : ''}>
+                    <button onclick="saveEditBurraco('${eventId}')">SALVA MODIFICHE</button>
+                    <button onclick="cancelRegistration('${eventId}'); goToScreen('screen-home');" style="background-color: #a97676;">CANCELLA ISCRIZIONE</button>
+                `;
+            } else {
+                container.innerHTML = `
+                    <h3>Modifica ${ev.type}</h3>
+                    <input type="number" id="edit-companions" min="0" value="${userReg.companions || 0}" placeholder="Numero Accompagnatori">
+                    <button onclick="saveEditAltro('${eventId}')">SALVA MODIFICHE</button>
+                    <button onclick="cancelRegistration('${eventId}'); goToScreen('screen-home');" style="background-color: #a97676;">CANCELLA ISCRIZIONE</button>
+                `;
+            }
+        }
+
+        function saveEditBurraco(eventId) {
+            const partnerInput = document.getElementById('edit-partner');
+            const noPotCheckbox = document.getElementById('edit-nopot');
+            const partnerVal = partnerInput ? partnerInput.value.trim() : '';
+            const noPot = noPotCheckbox ? noPotCheckbox.checked : false;
+            
+            const phoneKey = cleanPhoneKey(localUserProfile ? localUserProfile.phone : '');
+            const regId = 'reg_' + eventId + '_' + phoneKey;
+
+            if (dbRef) {
+                dbRef.child('registrations').child(regId).update({
+                    partner: noPot ? 'Senza compagno' : partnerVal,
+                    withoutPartner: noPot
+                });
+            }
+
+            alert('Modifiche salvate con successo!');
+            goToScreen('screen-home');
+        }
+
+        function saveEditAltro(eventId) {
+            const companionsInput = document.getElementById('edit-companions');
+            const compCount = companionsInput ? (parseInt(companionsInput.value) || 0) : 0;
+            
+            const phoneKey = cleanPhoneKey(localUserProfile ? localUserProfile.phone : '');
+            const regId = 'reg_' + eventId + '_' + phoneKey;
+
+            if (dbRef) {
+                dbRef.child('registrations').child(regId).update({
+                    companions: compCount
+                });
+            }
+
+            alert('Modifiche salvate con successo!');
+            goToScreen('screen-home');
+        }
+    </script>
+</body>
+</html>
