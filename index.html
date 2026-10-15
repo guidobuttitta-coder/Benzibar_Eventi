@@ -1,539 +1,196 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benzibar</title>
-    <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap" rel="stylesheet">
-    
-    <!-- SDK Firebase COMPAT -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-    <style>
-        :root {
-            --bg-color: #87A381;
-            --text-color: #798E76;
-            --card-bg: #ffffff;
-            --btn-bg: #798E76;
-            --btn-text: #ffffff;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            font-family: 'Comfortaa', cursive, sans-serif;
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-
-        h1, h2, h3, p, label, button, input, select {
-            font-family: 'Comfortaa', cursive, sans-serif;
-            color: var(--text-color);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            box-sizing: border-box;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .brand-logo {
-            max-width: 200px;
-            height: auto;
-            display: block;
-            margin: 0 auto 15px;
-        }
-
-        .brand-name {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 0 0 25px 0;
-        }
-
-        button, .btn {
-            background-color: var(--btn-bg);
-            color: var(--btn-text);
-            border: none;
-            padding: 12px 20px;
-            margin: 10px 0;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: opacity 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .btn-home {
-            background-color: #5d725a;
-            margin-top: 20px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 2px solid var(--text-color);
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 0.9rem;
-        }
-
-        table, th, td {
-            border: 1px solid var(--text-color);
-        }
-
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: rgba(121, 142, 118, 0.2);
-        }
-
-        .event-card {
-            border: 2px solid var(--text-color);
-            border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: left;
-            background: #fafafa;
-        }
-
-        .event-card img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .badge-enrolled {
-            background-color: #5d725a;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-
-        .section-subtitle {
-            margin-top: 20px;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-            border-bottom: 2px solid var(--text-color);
-            padding-bottom: 5px;
-        }
-
-        .sync-status {
-            font-size: 0.75rem;
-            color: #5d725a;
-            margin-top: 15px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benzibar</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root {
+--bg-color: #87A381;
+--text-color: #798E76;
+--card-bg: #ffffff;
+--btn-bg: #798E76;
+--btn-text: #ffffff;
+}
+body {
+background-color: var(--bg-color);
+font-family: 'Comfortaa', cursive, sans-serif;
+color: var(--text-color);
+margin: 0;
+padding: 20px;
+display: flex;
+flex-direction: column;
+align-items: center;
+min-height: 100vh;
+box-sizing: border-box;
+}
+h1, h2, h3, p, label, button, input, select {
+font-family: 'Comfortaa', cursive, sans-serif;
+color: var(--text-color);
+}
+.container {
+width: 100%;
+max-width: 600px;
+background: var(--card-bg);
+padding: 30px;
+border-radius: 15px;
+box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+box-sizing: border-box;
+text-align: center;
+margin-bottom: 20px;
+}
+.brand-logo {
+max-width: 200px;
+height: auto;
+display: block;
+margin: 0 auto 15px;
+}
+.brand-name {
+font-size: 2.5rem;
+font-weight: bold;
+margin: 0 0 25px 0;
+}
+button, .btn {
+background-color: var(--btn-bg);
+color: var(--btn-text);
+border: none;
+padding: 12px 20px;
+margin: 10px 0;
+border-radius: 8px;
+font-size: 1rem;
+font-weight: bold;
+cursor: pointer;
+width: 100%;
+transition: opacity 0.2s;
+}
+button:hover {
+opacity: 0.9;
+}
+.btn-home {
+background-color: #5d725a;
+margin-top: 20px;
+}
+input, select {
+width: 100%;
+padding: 10px;
+margin: 10px 0;
+border: 2px solid var(--text-color);
+border-radius: 6px;
+box-sizing: border-box;
+}
+.hidden {
+display: none !important;
+}
+table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 15px;
+font-size: 0.9rem;
+}
+table, th, td {
+border: 1px solid var(--text-color);
+}
+th, td {
+padding: 8px;
+text-align: left;
+}
+th {
+background-color: rgba(121, 142, 118, 0.2);
+}
+.event-card {
+border: 2px solid var(--text-color);
+border-radius: 10px;
+padding: 15px;
+margin: 15px 0;
+text-align: left;
+background: #fafafa;
+}
+.event-card img {
+max-width: 100%;
+height: auto;
+border-radius: 6px;
+margin-bottom: 10px;
+}
+.badge-enrolled {
+background-color: #5d725a;
+color: white;
+padding: 5px 10px;
+border-radius: 4px;
+font-size: 0.8rem;
+display: inline-block;
+margin-bottom: 10px;
+}
+.section-subtitle {
+margin-top: 20px;
+margin-bottom: 10px;
+font-size: 1.1rem;
+border-bottom: 2px solid var(--text-color);
+padding-bottom: 5px;
+}
+.sync-status {
+font-size: 0.75rem;
+color: #5d725a;
+margin-top: 15px;
+}
+</style>
 </head>
 <body>
 
-    <!-- 1. SCHERMATA INIZIALE (PULSANTE NAVIGA) -->
-    <div id="screen-splash" class="container">
-        <img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'">
-        <h1 class="brand-name">benzibar</h1>
-        <button onclick="handleNavigaClick()">NAVIGA</button>
-    </div>
+<div id="screen-splash" class="container">
+<img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'">
+<h1 class="brand-name">benzibar</h1>
+<button id="btn-naviga" onclick="handleNavigaClick()">NAVIGA</button>
+</div>
 
-    <!-- 2. SCHERMATA REGISTRAZIONE UTENTE (OBBLIGATORIA) -->
-    <div id="screen-user-register" class="container hidden">
-        <h2>REGISTRAZIONE UTENTE</h2>
-        <p>Inserisci i tuoi dati per procedere:</p>
-        <input type="text" id="reg-name" placeholder="Nome">
-        <input type="text" id="reg-surname" placeholder="Cognome">
-        <input type="tel" id="reg-phone" placeholder="Numero di Telefono">
-        <button onclick="saveUserProfile()">SALVA CREDENZIALI</button>
-    </div>
+<div id="screen-user-register" class="container hidden">
+<h2>REGISTRAZIONE UTENTE</h2>
+<p>Inserisci i tuoi dati per procedere:</p>
+<input type="text" id="reg-name" placeholder="Nome">
+<input type="text" id="reg-surname" placeholder="Cognome">
+<input type="tel" id="reg-phone" placeholder="Numero di Telefono">
+<button onclick="saveUserProfile()">SALVA CREDENZIALI</button>
+</div>
 
-    <!-- 3. SCHERMATA HOME PRINCIPALE -->
-    <div id="screen-home" class="container hidden">
-        <img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'" style="max-width: 120px;">
-        <h1 class="brand-name" style="font-size: 1.8rem;">benzibar</h1>
-        
-        <div id="user-info-bar" style="margin-bottom: 15px; font-weight: bold; color: #5d725a;"></div>
+<div id="screen-home" class="container hidden">
+<img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'" style="max-width: 120px;">
+<h1 class="brand-name" style="font-size: 1.8rem;">benzibar</h1>
+<div id="user-info-bar" style="margin-bottom: 15px; font-weight: bold; color: #5d725a;"></div>
+<div id="user-active-events-section" class="hidden">
+<h3 class="section-subtitle">I TUOI EVENTI</h3>
+<div id="home-user-events-list"></div>
+</div>
+<button onclick="goToScreen('screen-events')">PROSSIMI EVENTI</button>
+<button onclick="openStaffLogin()">ACCESSO RISERVATO STAFF</button>
+<button id="btn-reset-profile" onclick="resetLocalProfile()" style="background-color: #a97676; font-size: 0.85rem; padding: 8px;">CAMBIA UTENTE / REGISTRATI DI NUOVO</button>
+<div class="sync-status" id="sync-indicator">🟢 Connessione Cloud Attiva</div>
+</div>
 
-        <div id="user-active-events-section" class="hidden">
-            <h3 class="section-subtitle">I TUOI EVENTI</h3>
-            <div id="home-user-events-list"></div>
-        </div>
+<div id="screen-staff-login" class="container hidden">
+<h2>ACCESSO STAFF</h2>
+<input type="password" id="staff-password" placeholder="Inserisci password">
+<button onclick="verifyStaffPassword()">ACCEDI</button>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+</div>
 
-        <button onclick="goToScreen('screen-events')">PROSSIMI EVENTI</button>
-        <button onclick="openStaffLogin()">ACCESSO RISERVATO STAFF</button>
-        <button id="btn-reset-profile" onclick="resetLocalProfile()" style="background-color: #a97676; font-size: 0.85rem; padding: 8px;">CAMBIA UTENTE / REGISTRATI DI NUOVO</button>
-        <div class="sync-status" id="sync-indicator">🟢 Connessione Cloud Attiva</div>
-    </div>
+<div id="screen-staff-dashboard" class="container hidden">
+<h2>PANNELLO STAFF</h2>
+<button onclick="goToScreen('screen-create-event')">CREA NUOVO EVENTO</button>
+<button onclick="showRegisteredUsersTable()">UTENTI REGISTRATI</button>
+<button onclick="showStaffEventsList()">GESTIONE EVENTI & ISCRITTI</button>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+</div>
 
-    <!-- SCHERMATA LOGIN STAFF -->
-    <div id="screen-staff-login" class="container hidden">
-        <h2>ACCESSO STAFF</h2>
-        <input type="password" id="staff-password" placeholder="Inserisci password">
-        <button onclick="verifyStaffPassword()">ACCEDI</button>
-        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
-    </div>
-
-    <!-- SCHERMATA PANNELLO STAFF -->
-    <div id="screen-staff-dashboard" class="container hidden">
-        <h2>PANNELLO STAFF</h2>
-        <button onclick="goToScreen('screen-create-event')">CREA NUOVO EVENTO</button>
-        <button onclick="showRegisteredUsersTable()">UTENTI REGISTRATI</button>
-        <button onclick="showStaffEventsList()">GESTIONE EVENTI & ISCRITTI</button>
-        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
-    </div>
-
-    <!-- SCHERMATA CREAZIONE EVENTO -->
-    <div id="screen-create-event" class="container hidden">
-        <h2>CREA EVENTO</h2>
-        <input type="file" id="event-img-file" accept="image/*">
-        <input type="text" id="event-datetime" placeholder="Data e Orario (es. 25 Ottobre ore 21:00)">
-        <select id="event-type">
-            <option value="Torneo Burraco">Torneo Burraco</option>
-            <option value="Altro Evento">Altro Evento</option>
-        </select>
-        <button onclick="createNewEvent()">PUBBLICA EVENTO</button>
-        <button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
-    </div>
-
-    <!-- SCHERMATA GESTIONE EVENTI STAFF & TABELLE -->
-    <div id="screen-staff-management" class="container hidden">
-        <h2 id="staff-management-title">GESTIONE EVENTI</h2>
-        <div id="staff-management-content"></div>
-        <button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
-    </div>
-
-    <!-- SCHERMATA PROSSIMI EVENTI (UTENTE) -->
-    <div id="screen-events" class="container hidden">
-        <h2>PROSSIMI EVENTI</h2>
-        <div id="public-events-list"></div>
-        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
-    </div>
-
-    <!-- SCHERMATA MODIFICA PARTECIPAZIONE -->
-    <div id="screen-edit-participation" class="container hidden">
-        <h2>MODIFICA PARTECIPAZIONE</h2>
-        <div id="edit-participation-form-container"></div>
-        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
-    </div>
-
-    <script>
-        const firebaseConfig = {
-            databaseURL: "https://benzibar-app-default-rtdb.firebaseio.com" 
-        };
-        
-        let dbRef = null;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            dbRef = firebase.database().ref();
-        } catch(e) {
-            console.log("Errore inizializzazione Firebase:", e);
-        }
-
-        function cleanPhoneKey(phone) {
-            if (!phone) return '';
-            return String(phone).replace(/[^0-9+]/g, '');
-        }
-
-        let savedUserRaw = localStorage.getItem('benzibar_user_profile');
-        let localUserProfile = savedUserRaw ? JSON.parse(savedUserRaw) : null;
-
-        let db = {
-            users: {},
-            events: {},
-            registrations: {}
-        };
-
-        if (dbRef) {
-            dbRef.on('value', (snapshot) => {
-                const data = snapshot.val() || {};
-                db.users = data.users || {};
-                db.events = data.events || {};
-                db.registrations = data.registrations || {};
-                
-                const indicator = document.getElementById('sync-indicator');
-                if (indicator) indicator.innerText = "🟢 Connessione Cloud Attiva";
-
-                syncLocalUserToCloud();
-                updateHomeView();
-
-                if (!document.getElementById('screen-events').classList.contains('hidden')) {
-                    renderPublicEvents();
-                }
-                if (!document.getElementById('screen-staff-management').classList.contains('hidden')) {
-                    const title = document.getElementById('staff-management-title').innerText;
-                    if (title === 'UTENTI REGISTRATI') {
-                        showRegisteredUsersTable(false);
-                    } else if (title === 'GESTIONE EVENTI') {
-                        showStaffEventsList(false);
-                    }
-                }
-            }, (error) => {
-                console.error("Errore sincronizzazione Firebase:", error);
-                const indicator = document.getElementById('sync-indicator');
-                if (indicator) indicator.innerText = "🔴 Disconnesso (offline)";
-            });
-        }
-
-        function handleNavigaClick() {
-            if (localUserProfile && localUserProfile.name && localUserProfile.surname && localUserProfile.phone) {
-                goToScreen('screen-home');
-            } else {
-                goToScreen('screen-user-register');
-            }
-        }
-
-        function syncLocalUserToCloud() {
-            if (localUserProfile && localUserProfile.phone && dbRef) {
-                const key = cleanPhoneKey(localUserProfile.phone);
-                if (key) {
-                    dbRef.child('users').child(key).set(localUserProfile);
-                }
-            }
-        }
-
-        function goToScreen(screenId) {
-            document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-            const target = document.getElementById(screenId);
-            if (target) {
-                target.classList.remove('hidden');
-            }
-            if (screenId === 'screen-home') {
-                updateHomeView();
-            } else if (screenId === 'screen-events') {
-                renderPublicEvents();
-            }
-        }
-
-        function updateHomeView() {
-            const infoBar = document.getElementById('user-info-bar');
-            const activeSection = document.getElementById('user-active-events-section');
-            const listDiv = document.getElementById('home-user-events-list');
-            
-            if (!infoBar) return;
-
-            if (localUserProfile && localUserProfile.name) {
-                infoBar.innerText = `Benvenuto, ${localUserProfile.name} ${localUserProfile.surname}!`;
-            } else {
-                infoBar.innerText = '';
-                if (activeSection) activeSection.classList.add('hidden');
-                return;
-            }
-
-            const currentPhoneKey = cleanPhoneKey(localUserProfile.phone);
-
-            const userRegKeys = Object.keys(db.registrations).filter(k => {
-                const reg = db.registrations[k];
-                return reg && cleanPhoneKey(reg.userPhone) === currentPhoneKey;
-            });
-            
-            if (userRegKeys.length === 0) {
-                if (activeSection) activeSection.classList.add('hidden');
-                if (listDiv) listDiv.innerHTML = '';
-                return;
-            }
-
-            if (activeSection) activeSection.classList.remove('hidden');
-            let html = '';
-
-            userRegKeys.forEach(key => {
-                const userReg = db.registrations[key];
-                const ev = db.events[userReg.eventId];
-
-                if (ev) {
-                    html += `
-                        <div class="event-card">
-                            <span class="badge-enrolled">ISCRITTO</span>
-                            ${ev.img ? `<img src="${ev.img}" alt="Locandina">` : ''}
-                            <h3>${ev.type}</h3>
-                            <p><b>Data/Ora:</b> ${ev.datetime}</p>
-                            <button onclick="openEditParticipation('${ev.id}')">MODIFICA ISCRIZIONE</button>
-                            <button onclick="cancelRegistration('${ev.id}')" style="background-color: #a97676;">CANCELLA ISCRIZIONE</button>
-                        </div>
-                    `;
-                }
-            });
-
-            if (listDiv) listDiv.innerHTML = html;
-        }
-
-        function resetLocalProfile() {
-            if (confirm("Vuoi cancellare i dati salvati su questo telefono per registrarti con un altro nome/telefono?")) {
-                localStorage.removeItem('benzibar_user_profile');
-                localUserProfile = null;
-                goToScreen('screen-user-register');
-            }
-        }
-
-        function openStaffLogin() {
-            const passInput = document.getElementById('staff-password');
-            if (passInput) passInput.value = '';
-            goToScreen('screen-staff-login');
-        }
-
-        function verifyStaffPassword() {
-            const passInput = document.getElementById('staff-password');
-            const pass = passInput ? passInput.value : '';
-            if (pass === 'BENZIBAR') {
-                goToScreen('screen-staff-dashboard');
-            } else {
-                alert('Password errata!');
-            }
-        }
-
-        let uploadedImageBase64 = "";
-        const imgFileInput = document.getElementById('event-img-file');
-        if (imgFileInput) {
-            imgFileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(uploadEvent) {
-                        uploadedImageBase64 = uploadEvent.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        function createNewEvent() {
-            const datetimeInput = document.getElementById('event-datetime');
-            const typeInput = document.getElementById('event-type');
-            const datetime = datetimeInput ? datetimeInput.value.trim() : '';
-            const type = typeInput ? typeInput.value : 'Torneo Burraco';
-
-            if (!datetime) {
-                alert('Inserisci data e orario dell\'evento.');
-                return;
-            }
-
-            const newId = 'ev_' + Date.now();
-            const newEventObj = {
-                id: newId,
-                img: uploadedImageBase64,
-                datetime: datetime,
-                type: type
-            };
-
-            if (dbRef) {
-                dbRef.child('events').child(newId).set(newEventObj);
-            }
-
-            alert('Evento pubblicato! Sarà visibile su tutti i telefoni.');
-            uploadedImageBase64 = "";
-            if (imgFileInput) imgFileInput.value = "";
-            if (datetimeInput) datetimeInput.value = "";
-            goToScreen('screen-staff-dashboard');
-        }
-
-        function showRegisteredUsersTable(changeScreen = true) {
-            if (changeScreen) goToScreen('screen-staff-management');
-            const titleEl = document.getElementById('staff-management-title');
-            if (titleEl) titleEl.innerText = 'UTENTI REGISTRATI';
-            const container = document.getElementById('staff-management-content');
-            if (!container) return;
-
-            const usersList = Object.values(db.users);
-            if (usersList.length === 0) {
-                container.innerHTML = '<p>Nessun utente registrato finora nel database.</p>';
-                return;
-            }
-
-            let html = `
-                <button onclick="exportTableToCSV('users-table', 'utenti_registrati.csv')" style="margin-bottom:10px;">SCARICA EXCEL (CSV)</button>
-                <table id="users-table">
-                    <tr><th>Nome</th><th>Cognome</th><th>Telefono</th></tr>
-            `;
-            usersList.forEach(u => {
-                html += `<tr><td>${u.name || '-'}</td><td>${u.surname || '-'}</td><td>${u.phone || '-'}</td></tr>`;
-            });
-            html += '</table>';
-            container.innerHTML = html;
-        }
-
-        function showStaffEventsList(changeScreen = true) {
-            if (changeScreen) goToScreen('screen-staff-management');
-            const titleEl = document.getElementById('staff-management-title');
-            if (titleEl) titleEl.innerText = 'GESTIONE EVENTI';
-            const container = document.getElementById('staff-management-content');
-            if (!container) return;
-
-            const eventsList = Object.values(db.events);
-            if (eventsList.length === 0) {
-                container.innerHTML = '<p>Nessun evento creato.</p>';
-                return;
-            }
-
-            let html = '';
-            eventsList.forEach(ev => {
-                const eventRegs = Object.values(db.registrations).filter(r => r.eventId === ev.id);
-                
-                let totalCount = eventRegs.length;
-                if (ev.type === 'Altro Evento') {
-                    eventRegs.forEach(r => { totalCount += (parseInt(r.companions) || 0); });
-                } else {
-                    eventRegs.forEach(r => { if(r.partner && r.partner !== 'Senza compagno') totalCount += 1; });
-                }
-
-                html += `
-                    <div class="event-card">
-                        ${ev.img ? `<img src="${ev.img}" alt="Locandina">` : ''}
-                        <h3>${ev.type}</h3>
-                        <p><b>Data/Ora:</b> ${ev.datetime}</p>
-                        <p><b>Iscritti Totali:</b> ${totalCount}</p>
-                        <button onclick="openEditEvent('${ev.id}')">MODIFICA EVENTO</button>
-                        <button onclick="deleteEvent('${ev.id}')" style="background-color: #a97676;">CANCELLA EVENTO</button>
-                        <button onclick="showEventRegistrations('${ev.id}')">ELENCO ISCRITTI</button>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-        function deleteEvent(eventId) {
-            if (confirm('Vuoi davvero cancellare questo evento da tutti i dispositivi?')) {
-                if (dbRef) {
-                    dbRef.child('events').child(eventId).remove();
-                    Object.keys(db.registrations).forEach(k => {
-                        if (db.registrations[k].eventId === eventId) {
-                            dbRef.child('registrations').child(k).remove();
-                        }
-                    });
-                }
-                showStaffEventsList(false);
-            }
-        }
-
-        function openEditEvent(eventId) {
-            
+<div id="screen-create-event" class="container hidden">
+<h2>CREA EVENTO</h2>
+<input type="file" id="event-img-file" accept="image/*">
+<input type="text" id="event-datetime" placeholder="Data e Orario">
+<select id="event-type">
+<option value="Torneo Burraco">Torneo Burraco</option>
+<option value="Altro Evento">Altro Evento</option>
+</select>
+<button onclick="createNewEvent()">PUBBLICA EVENTO</button>
+<button class="btn-home" onclick="goToScreen
