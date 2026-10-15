@@ -139,13 +139,13 @@ margin-top: 15px;
 </style>
 </head>
 <body>
-
+<!-- SCHERMATA SPLASH (Pulsante Naviga) -->
 <div id="screen-splash" class="container">
 <img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'">
 <h1 class="brand-name">benzibar</h1>
-<button id="btn-naviga" onclick="handleNavigaClick()">NAVIGA</button>
+<button onclick="goToScreen('screen-user-register')">NAVIGA</button>
 </div>
-
+<!-- SCHERMATA REGISTRAZIONE OBBLIGATORIA -->
 <div id="screen-user-register" class="container hidden">
 <h2>REGISTRAZIONE UTENTE</h2>
 <p>Inserisci i tuoi dati per procedere:</p>
@@ -153,8 +153,9 @@ margin-top: 15px;
 <input type="text" id="reg-surname" placeholder="Cognome">
 <input type="tel" id="reg-phone" placeholder="Numero di Telefono">
 <button onclick="saveUserProfile()">SALVA CREDENZIALI</button>
+<button class="btn-home" onclick="goToScreen('screen-splash')">INDIETRO</button>
 </div>
-
+<!-- SCHERMATA HOME PRINCIPALE -->
 <div id="screen-home" class="container hidden">
 <img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'" style="max-width: 120px;">
 <h1 class="brand-name" style="font-size: 1.8rem;">benzibar</h1>
@@ -165,17 +166,17 @@ margin-top: 15px;
 </div>
 <button onclick="goToScreen('screen-events')">PROSSIMI EVENTI</button>
 <button onclick="openStaffLogin()">ACCESSO RISERVATO STAFF</button>
-<button id="btn-reset-profile" onclick="resetLocalProfile()" style="background-color: #a97676; font-size: 0.85rem; padding: 8px;">CAMBIA UTENTE / REGISTRATI DI NUOVO</button>
+<button onclick="goToScreen('screen-user-register')" style="background-color: #a97676; font-size: 0.85rem; padding: 8px;">CAMBIA UTENTE / REGISTRATI DI NUOVO</button>
 <div class="sync-status" id="sync-indicator">🟢 Connessione Cloud Attiva</div>
 </div>
-
+<!-- SCHERMATA LOGIN STAFF -->
 <div id="screen-staff-login" class="container hidden">
 <h2>ACCESSO STAFF</h2>
 <input type="password" id="staff-password" placeholder="Inserisci password">
 <button onclick="verifyStaffPassword()">ACCEDI</button>
 <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
 </div>
-
+<!-- SCHERMATA PANNELLO STAFF -->
 <div id="screen-staff-dashboard" class="container hidden">
 <h2>PANNELLO STAFF</h2>
 <button onclick="goToScreen('screen-create-event')">CREA NUOVO EVENTO</button>
@@ -183,7 +184,7 @@ margin-top: 15px;
 <button onclick="showStaffEventsList()">GESTIONE EVENTI & ISCRITTI</button>
 <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
 </div>
-
+<!-- SCHERMATA CREAZIONE EVENTO -->
 <div id="screen-create-event" class="container hidden">
 <h2>CREA EVENTO</h2>
 <input type="file" id="event-img-file" accept="image/*">
@@ -193,4 +194,194 @@ margin-top: 15px;
 <option value="Altro Evento">Altro Evento</option>
 </select>
 <button onclick="createNewEvent()">PUBBLICA EVENTO</button>
-<button class="btn-home" onclick="goToScreen
+<button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
+</div>
+<!-- SCHERMATA GESTIONE EVENTI STAFF & TABELLE -->
+<div id="screen-staff-management" class="container hidden">
+<h2 id="staff-management-title">GESTIONE EVENTI</h2>
+<div id="staff-management-content"></div>
+<button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
+</div>
+<!-- SCHERMATA PROSSIMI EVENTI (UTENTE) -->
+<div id="screen-events" class="container hidden">
+<h2>PROSSIMI EVENTI</h2>
+<div id="public-events-list"></div>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+</div>
+<!-- SCHERMATA MODIFICA PARTECIPAZIONE -->
+<div id="screen-edit-participation" class="container hidden">
+<h2>MODIFICA PARTECIPAZIONE</h2>
+<div id="edit-participation-form-container"></div>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+</div>
+<script>
+const firebaseConfig = { databaseURL: "https://benzibar-app-default-rtdb.firebaseio.com" };
+let dbRef = null;
+try {
+firebase.initializeApp(firebaseConfig);
+dbRef = firebase.database().ref();
+} catch(e) { console.log("Errore Firebase:", e); }
+function cleanPhoneKey(phone) {
+if (!phone) return '';
+return String(phone).replace(/[^0-9+]/g, '');
+}
+let savedUserRaw = localStorage.getItem('benzibar_user_profile');
+let localUserProfile = savedUserRaw ? JSON.parse(savedUserRaw) : null;
+let db = { users: {}, events: {}, registrations: {} };
+function goToScreen(screenId) {
+document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+const target = document.getElementById(screenId);
+if (target) target.classList.remove('hidden');
+if (screenId === 'screen-home') updateHomeView();
+else if (screenId === 'screen-events') renderPublicEvents();
+}
+if (dbRef) {
+dbRef.on('value', (snapshot) => {
+const data = snapshot.val() || {};
+db.users = data.users || {};
+db.events = data.events || {};
+db.registrations = data.registrations || {};
+const indicator = document.getElementById('sync-indicator');
+if (indicator) indicator.innerText = "🟢 Connessione Cloud Attiva";
+updateHomeView();
+if (!document.getElementById('screen-events').classList.contains('hidden')) renderPublicEvents();
+}, (error) => {
+const indicator = document.getElementById('sync-indicator');
+if (indicator) indicator.innerText = "🔴 Disconnesso (offline)";
+});
+}
+function updateHomeView() {
+const infoBar = document.getElementById('user-info-bar');
+const activeSection = document.getElementById('user-active-events-section');
+const listDiv = document.getElementById('home-user-events-list');
+if (!infoBar) return;
+if (localUserProfile && localUserProfile.name) {
+infoBar.innerText = ⁠Benvenuto, ${localUserProfile.name} ${localUserProfile.surname}!⁠;
+} else {
+infoBar.innerText = '';
+if (activeSection) activeSection.classList.add('hidden');
+return;
+}
+const currentPhoneKey = cleanPhoneKey(localUserProfile.phone);
+const userRegKeys = Object.keys(db.registrations).filter(k => {
+const reg = db.registrations[k];
+return reg && cleanPhoneKey(reg.userPhone) === currentPhoneKey;
+});
+if (userRegKeys.length === 0) {
+if (activeSection) activeSection.classList.add('hidden');
+if (listDiv) listDiv.innerHTML = '';
+return;
+}
+if (activeSection) activeSection.classList.remove('hidden');
+let html = '';
+userRegKeys.forEach(key => {
+const userReg = db.registrations[key];
+const ev = db.events[userReg.eventId];
+if (ev) {
+html += ⁠<div class="event-card"><span class="badge-enrolled">ISCRITTO</span>${ev.img ? ⁠<img src="${ev.img}">⁠ : ''}<h3>${ev.type}</h3><p><b>Data:</b> ${ev.datetime}</p><button onclick="openEditParticipation('${ev.id}')">MODIFICA</button><button onclick="cancelRegistration('${ev.id}')" style="background-color: #a97676;">CANCELLA</button></div>⁠;
+}
+});
+if (listDiv) listDiv.innerHTML = html;
+}
+function openStaffLogin() {
+goToScreen('screen-staff-login');
+}
+function verifyStaffPassword() {
+const pass = document.getElementById('staff-password').value;
+if (pass === 'BENZIBAR') goToScreen('screen-staff-dashboard');
+else alert('Password errata!');
+}
+let uploadedImageBase64 = "";
+const imgFileInput = document.getElementById('event-img-file');
+if (imgFileInput) {
+imgFileInput.addEventListener('change', function(e) {
+const file = e.target.files[0];
+if (file) {
+const reader = new FileReader();
+reader.onload = function(evt) { uploadedImageBase64 = evt.target.result; };
+reader.readAsDataURL(file);
+}
+});
+}
+function createNewEvent() {
+const datetime = document.getElementById('event-datetime').value.trim();
+const type = document.getElementById('event-type').value;
+if (!datetime) { alert('Inserisci data e orario.'); return; }
+const newId = 'ev_' + Date.now();
+if (dbRef) dbRef.child('events').child(newId).set({ id: newId, img: uploadedImageBase64, datetime, type });
+alert('Evento pubblicato!');
+goToScreen('screen-staff-dashboard');
+}
+function showRegisteredUsersTable(changeScreen = true) {
+if (changeScreen) goToScreen('screen-staff-management');
+document.getElementById('staff-management-title').innerText = 'UTENTI REGISTRATI';
+const container = document.getElementById('staff-management-content');
+const usersList = Object.values(db.users);
+if (usersList.length === 0) { container.innerHTML = '<p>Nessun utente.</p>'; return; }
+let html = ⁠<table id="users-table"><tr><th>Nome</th><th>Cognome</th><th>Telefono</th></tr>⁠;
+usersList.forEach(u => { html += ⁠<tr><td>${u.name||'-'}</td><td>${u.surname||'-'}</td><td>${u.phone||'-'}</td></tr>⁠; });
+container.innerHTML = html + '</table>';
+}
+function showStaffEventsList(changeScreen = true) {
+if (changeScreen) goToScreen('screen-staff-management');
+document.getElementById('staff-management-title').innerText = 'GESTIONE EVENTI';
+const container = document.getElementById('staff-management-content');
+const eventsList = Object.values(db.events);
+if (eventsList.length === 0) { container.innerHTML = '<p>Nessun evento.</p>'; return; }
+let html = '';
+eventsList.forEach(ev => {
+html += ⁠<div class="event-card"><h3>${ev.type}</h3><p>${ev.datetime}</p><button onclick="deleteEvent('${ev.id}')" style="background-color: #a97676;">CANCELLA</button></div>⁠;
+});
+container.innerHTML = html;
+}
+function deleteEvent(eventId) {
+if (confirm('Eliminare evento?')) {
+if (dbRef) dbRef.child('events').child(eventId).remove();
+showStaffEventsList(false);
+}
+}
+function saveUserProfile() {
+const name = document.getElementById('reg-name').value.trim();
+const surname = document.getElementById('reg-surname').value.trim();
+const phone = document.getElementById('reg-phone').value.trim();
+if (!name || !surname || !phone) { alert('Compila tutti i campi obbligatori.'); return; }
+localUserProfile = { name, surname, phone };
+localStorage.setItem('benzibar_user_profile', JSON.stringify(localUserProfile));
+const key = cleanPhoneKey(phone);
+if (dbRef && key) {
+dbRef.child('users').child(key).set(localUserProfile);
+}
+alert('Credenziali salvate con successo!');
+goToScreen('screen-home');
+}
+function renderPublicEvents() {
+const container = document.getElementById('public-events-list');
+const eventsList = Object.values(db.events);
+if (eventsList.length === 0) { container.innerHTML = '<p>Nessun evento.</p>'; return; }
+let html = '';
+eventsList.forEach(ev => {
+html += ⁠<div class="event-card"><h3>${ev.type}</h3><p>${ev.datetime}</p><button onclick="openRegistrationModal('${ev.id}')">ISCRIVITI</button></div>⁠;
+});
+container.innerHTML = html;
+}
+function openRegistrationModal(eventId) {
+if (!localUserProfile) { goToScreen('screen-user-register'); return; }
+goToScreen('screen-edit-participation');
+const ev = db.events[eventId];
+document.getElementById('edit-participation-form-container').innerHTML = ⁠<h3>${ev.type}</h3><button onclick="confirmRegistration('${ev.id}')">CONFERMA</button>⁠;
+}
+function confirmRegistration(eventId) {
+const regId = eventId + '_' + cleanPhoneKey(localUserProfile.phone);
+if (dbRef) dbRef.child('registrations').child(regId).set({ id: regId, eventId, userPhone: localUserProfile.phone, userName: localUserProfile.name, userSurname: localUserProfile.surname });
+alert('Iscritto!');
+goToScreen('screen-home');
+}
+function cancelRegistration(eventId) {
+if (confirm('Cancellare iscrizione?')) {
+if (dbRef) dbRef.child('registrations').child(eventId + '_' + cleanPhoneKey(localUserProfile.phone)).remove();
+updateHomeView();
+}
+}
+</script>
+</body>
+</html>
