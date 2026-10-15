@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benzibar</title>
+    
+    <!-- PWA Manifest e Tema -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#87A381">
+
+    <!-- Importazione del font Comfortaa Bold -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- SDK Firebase per sincronizzazione dati multi-dispositivo -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #87A381;
+            --text-color: #798E76;
+            --card-bg: #ffffff;
+            --btn-bg: #798E76;
+            --btn-text: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Comfortaa', cursive, sans-serif;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, p, label, button, input, select {
+            font-family: 'Comfortaa', cursive, sans-serif;
+            color: var(--text-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .brand-logo {
+            max-width: 150px;
+            height: auto;
+            display: block;
+            margin: 0 auto 5px;
+        }
+
+        .brand-name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 0 20px 0;
+        }
+
+        button, .btn {
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            padding: 12px 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-home {
+            background-color: #5d725a;
+            margin-top: 20px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid var(--text-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .inline-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 10px 0 5px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .inline-label span {
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .inline-label input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        table, th, td {
+            border: 1px solid var(--text-color);
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: rgba(121, 142, 118, 0.2);
+        }
+
+        .event-card {
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+            background: #fafafa;
+        }
+
+        .event-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .badge-enrolled {
+            background-color: #5d725a;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .section-subtitle {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid var(--text-color);
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SCHERMATA HOME -->
+    <div id="screen-home" class="container">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+        
+        <div id="user-active-events-section" class="hidden">
+            <h3 class="section-subtitle">I TUOI EVENTI</h3>
+            <div id="home-user-events-list"></div>
+        </div>
+
+        <button onclick="accessEventsFlow()">ACCESSO PROSSIMI EVENTI</button>
+        <button onclick="openStaffLogin()">ACCESSO RISERVATO STAFF</button>
+    </div>
+
+    <!-- SCHERMATA LOGIN STAFF -->
+    <div id="screen-staff-login" class="container hidden">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+        
+        <h2>ACCESSO STAFF</h2>
+        <input type="password" id="staff-password" placeholder="Inserisci password">
+        <button onclick="verifyStaffPassword()">ACCEDI</button>
+        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+    </div>
+
+    <!-- SCHERMATA PANNELLO STAFF -->
+    <div id="screen-staff-dashboard" class="container hidden">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+
+        <h2>PANNELLO STAFF</h2>
+        <button onclick="goToScreen('screen-create-event')">CREA NUOVO EVENTO</button>
+        <button onclick="showRegisteredUsersTable()">UTENTI REGISTRATI</button>
+        <button onclick="showStaffEventsList()">GESTIONE EVENTI & ISCRITTI</button>
+        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+    </div>
+
+    <!-- SCHERMATA CREAZIONE EVENTO -->
+    <div id="screen-create-event" class="container hidden">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+
+        <h2>CREA EVENTO</h2>
+        <input type="file" id="event-img-file" accept="image/*">
+        <input type="text" id="event-datetime" placeholder="Data e Orario (es. 25 Ottobre ore 21:00)">
+        <select id="event-type">
+            <option value="Torneo Burraco">Torneo Burraco</option>
+            <option value="Altro Evento">Altro Evento</option>
+        </select>
+        <button onclick="createNewEvent()">CREA NUOVO EVENTO</button>
+        <button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
+    </div>
+
+    <!-- SCHERMATA GESTIONE EVENTI STAFF & TABELLE -->
+    <div id="screen-staff-management" class="container hidden">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+
+        <h2 id="staff-management-title">GESTIONE EVENTI</h2>
+        <div id="staff-management-content"></div>
+        <button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
+    </div>
+
+    <!-- SCHERMATA REGISTRAZIONE UTENTE (PRIMA VOLTA) -->
+    <div id="screen-user-register" class="container hidden">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+
+        <h2>REGISTRAZIONE UTENTE</h2>
+        <p>Inserisci i tuoi dati (richiesto solo la prima volta):</p>
+        <input type="text" id="reg-name" placeholder="Nome">
+        <input type="text" id="reg-surname" placeholder="Cognome">
+        <input type="text" id="reg-phone" placeholder="Telefono">
+        <button onclick="saveUserProfile()">REGISTRATI E CONTINUA</button>
+        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+    </div>
+
+    <!-- SCHERMATA PROSSIMI EVENTI (UTENTE) -->
+    <div id="screen-events" class="container hidden">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+
+        <h2>PROSSIMI EVENTI</h2>
+        <div id="public-events-list"></div>
+        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+    </div>
+
+    <!-- SCHERMATA MODIFICA PARTECIPAZIONE -->
+    <div id="screen-edit-participation" class="container hidden">
+        <img src="logo-benzibar.png" alt="Logo Farfalla" class="brand-logo" onerror="this.src='logo-benzibar.jpg';">
+        <h1 class="brand-name">benzibar</h1>
+
+        <h2>MODIFICA PARTECIPAZIONE</h2>
+        <div id="edit-participation-form-container"></div>
+        <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://benzibar-app-default-rtdb.firebaseio.com" 
+        };
+        
+        let dbRef = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            dbRef = firebase.database().ref();
+        } catch(e) {
+            console.log("Modalità offline/locale attiva");
+        }
+
+        let db = {
+            users: {},
+            events: {},
+            registrations: {},
+            currentUserPhone: localStorage.getItem('benzibar_current_user') || null
+        };
+
+        if (dbRef) {
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                db.users = data.users || {};
+                db.events = data.events || {};
+                db.registrations = data.registrations || {};
+                
+                updateHomeView();
+                if (!document.getElementById('screen-events').classList.contains('hidden')) {
+                    renderPublicEvents();
+                }
+            });
+        }
+
+        function saveCloud() {
+            if (dbRef) {
+                dbRef.set({
+                    users: db.users,
+                    events: db.events,
+                    registrations: db.registrations
+                });
+            }
+            localStorage.setItem('benzibar_current_user', db.currentUserPhone || '');
+        }
+
+        function goToScreen(screenId) {
+            document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+            if (screenId === 'screen-home') {
+                updateHomeView();
+            } else if (screenId === 'screen-events') {
+                renderPublicEvents();
+            }
+        }
+
+        function updateHomeView() {
+            const activeSection = document.getElementById('user-active-events-section');
+            const listDiv = document.getElementById('home-user-events-list');
+            
+            if (!db.currentUserPhone) {
+                activeSection.classList.add('hidden');
+                return;
+            }
+
+            const userRegKeys = Object.keys(db.registrations).filter(k => db.registrations[k].userPhone === db.currentUserPhone);
+            
+            if (userRegKeys.length === 0) {
+                activeSection.classList.add('hidden');
+                listDiv.innerHTML = '';
+                return;
+            }
+
+            activeSection.classList.remove('hidden');
+            let html = '';
+
+            userRegKeys.forEach(key => {
+                const userReg = db.registrations[key];
+                const ev = db.events[userReg.eventId];
+
+                if (ev) {
+                    html += `
+                        <div class="event-card">
+                            <span class="badge-enrolled">ISCRITTO</span>
+                            ${ev.img ? `<img src="${ev.img}" alt="Locandina">` : ''}
+                            <h3>${ev.type}</h3>
+                            <p><b>Data/Ora:</b> ${ev.datetime}</p>
+                            <button onclick="openEditParticipation('${ev.id}')">MODIFICA</button>
+                            <button onclick="cancelRegistration('${ev.id}')" style="background-color: #a97676;">CANCELLA ISCRIZIONE</button>
+                        </div>
+                    `;
+                }
+            });
+
+            listDiv.innerHTML = html;
+        }
+
+        function openStaffLogin() {
+            document.getElementById('staff-password').value = '';
+            goToScreen('screen-staff-login');
+        }
+
+        function verifyStaffPassword() {
+            const pass = document.getElementById('staff-password').value;
+            if (pass === 'BENZIBAR') {
+                goToScreen('screen-staff-dashboard');
+            } else {
+                alert('Password errata!');
+            }
+        }
+
+        let uploadedImageBase64 = "";
+        document.getElementById('event-img-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    uploadedImageBase64 = uploadEvent.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function createNewEvent() {
+            const datetime = document.getElementById('event-datetime').value;
+            const type = document.getElementById('event-type').value;
+
+            if (!datetime) {
+                alert('Inserisci data e orario dell\'evento.');
+                return;
+            }
+
+            const newId = 'ev_' + Date.now();
+            db.events[newId] = {
+                id: newId,
+                img: uploadedImageBase64,
+                datetime: datetime,
+                type: type
+            };
+
+            saveCloud();
+            alert('Evento creato e visibile a tutti i dispositivi!');
+            uploadedImageBase64 = "";
+            document.getElementById('event-img-file').value = "";
+            document.getElementById('event-datetime').value = "";
+            goToScreen('screen-staff-dashboard');
+        }
+
+        function showRegisteredUsersTable() {
+            goToScreen('screen-staff-management');
+            document.getElementById('staff-management-title').innerText = 'UTENTI REGISTRATI';
+            const container = document.getElementById('staff-management-content');
+
+            const usersList = Object.values(db.users);
+            if (usersList.length === 0) {
+                container.innerHTML = '<p>Nessun utente registrato.</p>';
+                return;
+            }
+
+            let html = `
+                <button onclick="exportTableToCSV('users-table', 'utenti_registrati.csv')" style="margin-bottom:10px;">SCARICA EXCEL (CSV)</button>
+                <table id="users-table">
+                    <tr><th>Nome</th><th>Cognome</th><th>Telefono</th></tr>
+            `;
+            usersList.forEach(u => {
+                html += `<tr><td>${u.name}</td><td>${u.surname}</td><td>${u.phone}</td></tr>`;
+            });
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function showStaffEventsList() {
+            goToScreen('screen-staff-management');
+            document.getElementById('staff-management-title').innerText = 'GESTIONE EVENTI';
+            const container = document.getElementById('staff-management-content');
+
+            const eventsList = Object.values(db.events);
+            if (eventsList.length === 0) {
+                container.innerHTML = '<p>Nessun evento creato.</p>';
+                return;
+            }
+
+            let html = '';
+            eventsList.forEach(ev => {
+                const eventRegs = Object.values(db.registrations).filter(r => r.eventId === ev.id);
+                
+                let totalCount = eventRegs.length;
+                if (ev.type === 'Altro Evento') {
+                    eventRegs.forEach(r => { totalCount += (parseInt(r.companions) || 0); });
+                } else {
+                    eventRegs.forEach(r => { if(r.partner && r.partner !== 'Senza compagno') totalCount += 1; });
+                }
+
+                html += `
+                    <div class="event-card">
+                        ${ev.img ? `<img src="${ev.img}" alt="Locandina">` : ''}
+                        <h3>${ev.type}</h3>
+                        <p><b>Data/Ora:</b> ${ev.datetime}</p>
+                        <p><b>Iscritti Totali:</b> ${totalCount}</p>
+                        <button onclick="openEditEvent('${ev.id}')">MODIFICA EVENTO</button>
+                        <button onclick="deleteEvent('${ev.id}')" style="background-color: #a97676;">CANCELLA EVENTO</button>
+                        <button onclick="showEventRegistrations('${ev.id}')">ELENCO ISCRITTI</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function deleteEvent(eventId) {
+            if (confirm('Vuoi davvero cancellare questo evento?')) {
+                delete db.events[eventId];
+                Object.keys(db.registrations).forEach(k => {
+                    if (db.registrations[k].eventId === eventId) delete db.registrations[k];
+                });
+                saveCloud();
+                showStaffEventsList();
+            }
+        }
+
+        function openEditEvent(eventId) {
+            const ev = db.events[eventId];
+            const newDatetime = prompt('Modifica Data e Orario:', ev.datetime);
+            const newType = prompt('Modifica Tipo ("Torneo Burraco" o "Altro Evento"):', ev.type);
+            if (newDatetime && newType) {
+                ev.datetime = newDatetime;
+                ev.type = newType;
+                saveCloud();
+                showStaffEventsList();
+            }
+        }
+
+        function showEventRegistrations(eventId) {
+            const ev = db.events[eventId];
+            const eventRegs = Object.values(db.registrations).filter(r => r.eventId === eventId);
+            const container = document.getElementById('staff-management-content');
+
+            if (eventRegs.length === 0) {
+                container.innerHTML = `<button onclick="showStaffEventsList()">Indietro</button><p>Nessun iscritto per questo evento.</p>`;
+                return;
+            }
+
+            let tableId = 'event-regs-table';
+            let html = `<button onclick="showStaffEventsList()" style="margin-bottom:10px;">Indietro</button>`;
+            html += `<button onclick="exportTableToCSV('${tableId}', 'elenco_iscritti_${ev.id}.csv')" style="margin-bottom:10px;">SCARICA EXCEL (CSV)</button>`;
+            
+            if (ev.type === 'Torneo Burraco') {
+                html += `
+                    <table id="${tableId}">
+                        <tr><th>Nome Cognome</th><th>Telefono</th><th>Compagno (Nome Cognome)</th></tr>
+                `;
+                eventRegs.forEach(r => {
+                    const u = db.users[r.userPhone];
+                    html += `<tr><td>${u ? u.name + ' ' + u.surname : 'N/D'}</td><td>${r.userPhone}</td><td>${r.partner || 'Senza compagno'}</td></tr>`;
+                });
+            } else {
+                html += `
+                    <table id="${tableId}">
+                        <tr><th>Nome Cognome</th><th>Telefono</th><th>Accompagnatori</th></tr>
+                `;
+                eventRegs.forEach(r => {
+                    const u = db.users[r.userPhone];
+                    html += `<tr><td>${u ? u.name + ' ' + u.surname : 'N/D'}</td><td>${r.userPhone}</td><td>${r.companions || 0}</td></tr>`;
+                });
+            }
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            let csv = [];
+            for (let i = 0; i < table.rows.length; i++) {
+                let row = [], cols = table.rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) 
+                    row.push('"' + cols[j].innerText + '"');
+                csv.push(row.join(","));
+            }
+            let csvFile = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+            let downloadLink = document.createElement("a");
+            downloadLink.download = filename;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        function accessEventsFlow() {
+            if (!db.currentUserPhone) {
+                goToScreen('screen-user-register');
+            } else {
+                goToScreen('screen-events');
+            }
+        }
+
+        function saveUserProfile() {
+            const name = document.getElementById('reg-name').value.trim();
+            const surname = document.getElementById('reg-surname').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+
+            if (!name || !surname || !phone) {
+                alert('Tutti i campi sono obbligatori.');
+                return;
+            }
+
+            db.users[phone] = { name, surname, phone };
+            db.currentUserPhone = phone;
+            saveCloud();
+            goToScreen('screen-events');
+        }
+
+        function renderPublicEvents() {
+            const container = document.getElementById('public-events-list');
+            const eventsList = Object.values(db.events);
+
+            if (eventsList.length === 0) {
+                container.innerHTML = '<p>Nessun evento disponibile al momento.</p>';
+                return;
+            }
+
+            let html = '';
+            eventsList.forEach(ev => {
+                const regKey = Object.keys(db.registrations).find(k => db.registrations[k].eventId === ev.id && db.registrations[k].userPhone === db.currentUserPhone);
+                const userReg = regKey ? db.registrations[regKey] : null;
+                const isEnrolled = !!userReg;
+
+                html += `
+                    <div class="event-card">
+                        ${ev.img ? `<img src="${ev.img}" alt="Locandina">` : ''}
+                        <h3>${ev.type}</h3>
+                        <p><b>Data/Ora:</b> ${ev.datetime}</p>
+                        ${isEnrolled ? '<span class="badge-enrolled">Iscritto</span>' : ''}
+                `;
+
+                if (ev.type === 'Torneo Burraco') {
+                    const partnerVal = userReg ? (userReg.partner === 'Senza compagno' ? '' : (userReg.partner || '')) : '';
+                    const noPartnerChecked = userReg && userReg.withoutPartner ? 'checked' : '';
+                    html += `
+                        <div id="burraco-form-${ev.id}">
+                            <div class="inline-label">
+                                <span>Compagno (facoltativo):</span>
+                                <label><input type="checkbox" id="nopot-${ev.id}" ${noPartnerChecked} onchange="toggleNoPartner('${ev.id}')"> senza compagno</label>
+                            </div>
+                            <input type="text" id="partner-${ev.id}" value="${partnerVal}" placeholder="Nome Cognome Compagno" ${noPartnerChecked ? 'disabled' : ''}>
+                            <button onclick="participateBurraco('${ev.id}')">ISCRIVIMI</button>
+                        </div>
+                    `;
+                } else {
+                    const compCount = userReg ? (userReg.companions || 0) : 0;
+                    html += `
+                        <div id="altro-form-${ev.id}">
+                            <label>Numero di Accompagnatori (facoltativo):</label>
+                            <input type="number" id="companions-${ev.id}" min="0" value="${compCount}" placeholder="0">
+                            <button onclick="participateAltro('${ev.id}')">ISCRIVIMI</button>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleNoPartner(eventId) {
+            const checkbox = document.getElementById(`nopot-${eventId}`);
+            const inputField = document.getElementById(`partner-${eventId}`);
+            if (checkbox.checked) {
+                inputField.value = '';
+                inputField.disabled = true;
+            } else {
+                inputField.disabled = false;
+            }
+        }
+
+        function participateBurraco(eventId) {
+            const partnerInput = document.getElementById(`partner-${eventId}`);
+            const noPartnerCheckbox = document.getElementById(`nopot-${eventId}`);
+            const partnerName = noPartnerCheckbox.checked ? 'Senza compagno' : partnerInput.value.trim();
+
+            const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
+            db.registrations[regId] = {
+                eventId: eventId,
+                userPhone: db.currentUserPhone,
+                partner: partnerName,
+                withoutPartner: noPartnerCheckbox.checked
+            };
+
+            saveCloud();
+            alert('Iscrizione effettuata con successo!');
+            renderPublicEvents();
+            updateHomeView();
+        }
+
+        function participateAltro(eventId) {
+            const companionsInput = document.getElementById(`companions-${eventId}`);
+            const companionsCount = parseInt(companionsInput.value) || 0;
+
+            const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
+            db.registrations[regId] = {
+                eventId: eventId,
+                userPhone: db.currentUserPhone,
+                companions: companionsCount
+            };
+
+            saveCloud();
+            alert('Iscrizione effettuata con successo!');
+            renderPublicEvents();
+            updateHomeView();
+        }
+
+        function cancelRegistration(eventId) {
+            if (confirm('Vuoi davvero cancellare l\'iscrizione a questo evento?')) {
+                const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
+                delete db.registrations[regId];
+                saveCloud();
+                updateHomeView();
+                renderPublicEvents();
+            }
+        }
+
+        function openEditParticipation(eventId) {
+            const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
+            const userReg = db.registrations[regId];
+            const ev = db.events[eventId];
+            
+            goToScreen('screen-edit-participation');
+            const container = document.getElementById('edit-participation-form-container');
+
+            if (ev.type === 'Torneo Burraco') {
+                container.innerHTML = `
+                    <h3>Modifica ${ev.type}</h3>
+                    <div class="inline-label">
+                        <span>Compagno (facoltativo):</span>
+                        <label><input type="checkbox" id="edit-nopot" ${userReg.partner === 'Senza compagno' ? 'checked' : ''} onchange="document.getElementById('edit-partner').disabled=this.checked"> senza compagno</label>
+                    </div>
+                    <input type="text" id="edit-partner" value="${userReg.partner === 'Senza compagno' ? '' : (userReg.partner || '')}" placeholder="Nome Cognome Compagno" ${userReg.partner === 'Senza compagno' ? 'disabled' : ''}>
+                    <button onclick="saveEditBurraco('${eventId}')">SALVA MODIFICHE</button>
+                    <button onclick="cancelRegistration('${eventId}'); goToScreen('screen-home');" style="background-color: #a97676;">CANCELLA ISCRIZIONE</button>
+                `;
+            } else {
+                container.innerHTML = `
+                    <h3>Modifica ${ev.type}</h3>
+                    <input type="number" id="edit-companions" min="0" value="${userReg.companions || 0}" placeholder="Numero Accompagnatori">
+                    <button onclick="saveEditAltro('${eventId}')">SALVA MODIFICHE</button>
+                    <button onclick="cancelRegistration('${eventId}'); goToScreen('screen-home');" style="background-color: #a97676;">CANCELLA ISCRIZIONE</button>
+                `;
+            }
+        }
+
+        function saveEditBurraco(eventId) {
+            const partnerVal = document.getElementById('edit-partner').value.trim();
+            const noPot = document.getElementById('edit-nopot').checked;
+            
+            const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
+            if (db.registrations[regId]) {
+                db.registrations[regId].partner = noPot ? 'Senza compagno' : partnerVal;
+                db.registrations[regId].withoutPartner = noPot;
+                saveCloud();
+                alert('Modifiche salvate!');
+                goToScreen('screen-home');
+            }
+        }
+
+        function saveEditAltro(eventId) {
+            const compCount = parseInt(document.getElementById('edit-companions').value) || 0;
+            
+            const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
+            if (db.registrations[regId]) {
+                db.registrations[regId].companions = compCount;
+                saveCloud();
+                alert('Modifiche salvate!');
+                goToScreen('screen-home');
+            }
+        }
+    </script>
+
+    <!-- Registrazione Service Worker per PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker registrato con successo!'))
+            .catch(err => console.log('Registrazione Service Worker fallita:', err));
+        });
+      }
+    </script>
+</body>
+</html>
