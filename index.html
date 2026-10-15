@@ -65,10 +65,16 @@ font-size: 1rem;
 font-weight: bold;
 cursor: pointer;
 width: 100%;
+box-sizing: border-box;
 transition: opacity 0.2s;
 }
 button:hover {
 opacity: 0.9;
+}
+.btn-install {
+background-color: #5d725a;
+border: 2px solid #ffffff;
+margin-top: 15px;
 }
 .btn-home {
 background-color: #5d725a;
@@ -81,9 +87,6 @@ margin: 10px 0;
 border: 2px solid var(--text-color);
 border-radius: 6px;
 box-sizing: border-box;
-}
-.hidden {
-display: none !important;
 }
 table {
 width: 100%;
@@ -143,49 +146,50 @@ margin-top: 15px;
 <div id="screen-splash" class="container">
 <img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'">
 <h1 class="brand-name">benzibar</h1>
-<button id="btn-naviga">NAVIGA</button>
+<button id="btn-naviga" onclick="goToScreen('screen-user-register')">NAVIGA</button>
+<button id="btn-install-app" class="btn-install" style="display:none;">📲 INSTALLA APP BENZIBAR</button>
 </div>
 <!-- SCHERMATA REGISTRAZIONE OBBLIGATORIA -->
-<div id="screen-user-register" class="container hidden">
+<div id="screen-user-register" class="container" style="display:none;">
 <h2>REGISTRAZIONE UTENTE</h2>
-<p>Inserisci i tuoi dati per procedere:</p>
+<p>Inserisci i tuoi dati obbligatori:</p>
 <input type="text" id="reg-name" placeholder="Nome">
 <input type="text" id="reg-surname" placeholder="Cognome">
 <input type="tel" id="reg-phone" placeholder="Numero di Telefono">
-<button id="btn-save-user">SALVA CREDENZIALI</button>
-<button class="btn-home" id="btn-back-splash">INDIETRO</button>
+<button onclick="saveUserProfile()">SALVA CREDENZIALI</button>
+<button class="btn-home" onclick="goToScreen('screen-splash')">INDIETRO</button>
 </div>
 <!-- SCHERMATA HOME PRINCIPALE -->
-<div id="screen-home" class="container hidden">
+<div id="screen-home" class="container" style="display:none;">
 <img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'" style="max-width: 120px;">
 <h1 class="brand-name" style="font-size: 1.8rem;">benzibar</h1>
 <div id="user-info-bar" style="margin-bottom: 15px; font-weight: bold; color: #5d725a;"></div>
-<div id="user-active-events-section" class="hidden">
+<div id="user-active-events-section" style="display:none;">
 <h3 class="section-subtitle">I TUOI EVENTI</h3>
 <div id="home-user-events-list"></div>
 </div>
-<button id="btn-go-events">PROSSIMI EVENTI</button>
-<button id="btn-go-staff-login">ACCESSO RISERVATO STAFF</button>
-<button id="btn-re-register" style="background-color: #a97676; font-size: 0.85rem; padding: 8px;">CAMBIA UTENTE / REGISTRATI DI NUOVO</button>
+<button onclick="goToScreen('screen-events')">PROSSIMI EVENTI</button>
+<button onclick="openStaffLogin()">ACCESSO RISERVATO STAFF</button>
+<button onclick="goToScreen('screen-user-register')" style="background-color: #a97676; font-size: 0.85rem; padding: 8px;">CAMBIA UTENTE / REGISTRATI DI NUOVO</button>
 <div class="sync-status" id="sync-indicator">🟢 Connessione Cloud Attiva</div>
 </div>
 <!-- SCHERMATA LOGIN STAFF -->
-<div id="screen-staff-login" class="container hidden">
+<div id="screen-staff-login" class="container" style="display:none;">
 <h2>ACCESSO STAFF</h2>
 <input type="password" id="staff-password" placeholder="Inserisci password">
-<button id="btn-verify-staff">ACCEDI</button>
-<button class="btn-home" id="btn-staff-to-home">HOME</button>
+<button onclick="verifyStaffPassword()">ACCEDI</button>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
 </div>
 <!-- SCHERMATA PANNELLO STAFF -->
-<div id="screen-staff-dashboard" class="container hidden">
+<div id="screen-staff-dashboard" class="container" style="display:none;">
 <h2>PANNELLO STAFF</h2>
-<button id="btn-go-create-event">CREA NUOVO EVENTO</button>
-<button id="btn-show-users">UTENTI REGISTRATI</button>
-<button id="btn-show-staff-events">GESTIONE EVENTI & ISCRITTI</button>
-<button class="btn-home" id="btn-dashboard-to-home">HOME</button>
+<button onclick="goToScreen('screen-create-event')">CREA NUOVO EVENTO</button>
+<button onclick="showRegisteredUsersTable()">UTENTI REGISTRATI</button>
+<button onclick="showStaffEventsList()">GESTIONE EVENTI & ISCRITTI</button>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
 </div>
 <!-- SCHERMATA CREAZIONE EVENTO -->
-<div id="screen-create-event" class="container hidden">
+<div id="screen-create-event" class="container" style="display:none;">
 <h2>CREA EVENTO</h2>
 <input type="file" id="event-img-file" accept="image/*">
 <input type="text" id="event-datetime" placeholder="Data e Orario">
@@ -193,28 +197,48 @@ margin-top: 15px;
 <option value="Torneo Burraco">Torneo Burraco</option>
 <option value="Altro Evento">Altro Evento</option>
 </select>
-<button id="btn-publish-event">PUBBLICA EVENTO</button>
-<button class="btn-home" id="btn-create-to-dashboard">INDIETRO</button>
+<button onclick="createNewEvent()">PUBBLICA EVENTO</button>
+<button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
 </div>
 <!-- SCHERMATA GESTIONE EVENTI STAFF & TABELLE -->
-<div id="screen-staff-management" class="container hidden">
+<div id="screen-staff-management" class="container" style="display:none;">
 <h2 id="staff-management-title">GESTIONE EVENTI</h2>
 <div id="staff-management-content"></div>
-<button class="btn-home" id="btn-management-to-dashboard">INDIETRO</button>
+<button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
 </div>
 <!-- SCHERMATA PROSSIMI EVENTI (UTENTE) -->
-<div id="screen-events" class="container hidden">
+<div id="screen-events" class="container" style="display:none;">
 <h2>PROSSIMI EVENTI</h2>
 <div id="public-events-list"></div>
-<button class="btn-home" id="btn-events-to-home">HOME</button>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
 </div>
 <!-- SCHERMATA MODIFICA PARTECIPAZIONE -->
-<div id="screen-edit-participation" class="container hidden">
+<div id="screen-edit-participation" class="container" style="display:none;">
 <h2>MODIFICA PARTECIPAZIONE</h2>
 <div id="edit-participation-form-container"></div>
-<button class="btn-home" id="btn-participation-to-home">HOME</button>
+<button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
 </div>
 <script>
+// --- GESTIONE PWA E INSTALLAZIONE APP ---
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+e.preventDefault();
+deferredPrompt = e;
+const btnInstall = document.getElementById('btn-install-app');
+if (btnInstall) btnInstall.style.display = 'block';
+});
+document.getElementById('btn-install-app').addEventListener('click', () => {
+if (deferredPrompt) {
+deferredPrompt.prompt();
+deferredPrompt.userChoice.then((choiceResult) => {
+if (choiceResult.outcome === 'accepted') {
+console.log('L'utente ha accettato l'installazione');
+}
+deferredPrompt = null;
+});
+}
+});
+// --- GESTIONE FIREBASE ---
 const firebaseConfig = { databaseURL: "https://benzibar-app-default-rtdb.firebaseio.com" };
 let dbRef = null;
 try {
@@ -228,33 +252,19 @@ return String(phone).replace(/[^0-9+]/g, '');
 let savedUserRaw = localStorage.getItem('benzibar_user_profile');
 let localUserProfile = savedUserRaw ? JSON.parse(savedUserRaw) : null;
 let db = { users: {}, events: {}, registrations: {} };
+// --- CAMBIO SCHERMATE SENZA ERRORI ---
 function goToScreen(screenId) {
-document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+const screens = document.querySelectorAll('.container');
+screens.forEach(el => {
+el.style.display = 'none';
+});
 const target = document.getElementById(screenId);
-if (target) target.classList.remove('hidden');
+if (target) {
+target.style.display = 'block';
+}
 if (screenId === 'screen-home') updateHomeView();
 else if (screenId === 'screen-events') renderPublicEvents();
 }
-// Inizializzazione Event Listener al caricamento completo della pagina
-document.addEventListener('DOMContentLoaded', () => {
-document.getElementById('btn-naviga').addEventListener('click', () => goToScreen('screen-user-register'));
-document.getElementById('btn-save-user').addEventListener('click', saveUserProfile);
-document.getElementById('btn-back-splash').addEventListener('click', () => goToScreen('screen-splash'));
-document.getElementById('btn-go-events').addEventListener('click', () => goToScreen('screen-events'));
-document.getElementById('btn-go-staff-login').addEventListener('click', openStaffLogin);
-document.getElementById('btn-re-register').addEventListener('click', () => goToScreen('screen-user-register'));
-document.getElementById('btn-verify-staff').addEventListener('click', verifyStaffPassword);
-document.getElementById('btn-staff-to-home').addEventListener('click', () => goToScreen('screen-home'));
-document.getElementById('btn-go-create-event').addEventListener('click', () => goToScreen('screen-create-event'));
-document.getElementById('btn-show-users').addEventListener('click', () => showRegisteredUsersTable());
-document.getElementById('btn-show-staff-events').addEventListener('click', () => showStaffEventsList());
-document.getElementById('btn-dashboard-to-home').addEventListener('click', () => goToScreen('screen-home'));
-document.getElementById('btn-publish-event').addEventListener('click', createNewEvent);
-document.getElementById('btn-create-to-dashboard').addEventListener('click', () => goToScreen('screen-staff-dashboard'));
-document.getElementById('btn-management-to-dashboard').addEventListener('click', () => goToScreen('screen-staff-dashboard'));
-document.getElementById('btn-events-to-home').addEventListener('click', () => goToScreen('screen-home'));
-document.getElementById('btn-participation-to-home').addEventListener('click', () => goToScreen('screen-home'));
-});
 if (dbRef) {
 dbRef.on('value', (snapshot) => {
 const data = snapshot.val() || {};
@@ -264,7 +274,7 @@ db.registrations = data.registrations || {};
 const indicator = document.getElementById('sync-indicator');
 if (indicator) indicator.innerText = "🟢 Connessione Cloud Attiva";
 updateHomeView();
-if (!document.getElementById('screen-events').classList.contains('hidden')) renderPublicEvents();
+if (document.getElementById('screen-events').style.display === 'block') renderPublicEvents();
 }, (error) => {
 const indicator = document.getElementById('sync-indicator');
 if (indicator) indicator.innerText = "🔴 Disconnesso (offline)";
@@ -279,7 +289,7 @@ if (localUserProfile && localUserProfile.name) {
 infoBar.innerText = ⁠Benvenuto, ${localUserProfile.name} ${localUserProfile.surname}!⁠;
 } else {
 infoBar.innerText = '';
-if (activeSection) activeSection.classList.add('hidden');
+if (activeSection) activeSection.style.display = 'none';
 return;
 }
 const currentPhoneKey = cleanPhoneKey(localUserProfile.phone);
@@ -288,11 +298,11 @@ const reg = db.registrations[k];
 return reg && cleanPhoneKey(reg.userPhone) === currentPhoneKey;
 });
 if (userRegKeys.length === 0) {
-if (activeSection) activeSection.classList.add('hidden');
+if (activeSection) activeSection.style.display = 'none';
 if (listDiv) listDiv.innerHTML = '';
 return;
 }
-if (activeSection) activeSection.classList.remove('hidden');
+if (activeSection) activeSection.style.display = 'block';
 let html = '';
 userRegKeys.forEach(key => {
 const userReg = db.registrations[key];
@@ -371,7 +381,7 @@ const key = cleanPhoneKey(phone);
 if (dbRef && key) {
 dbRef.child('users').child(key).set(localUserProfile);
 }
-alert('Credenziali salvate con successo!');
+alert('Credenziali salvate!');
 goToScreen('screen-home');
 }
 function renderPublicEvents() {
