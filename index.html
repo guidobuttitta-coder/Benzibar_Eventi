@@ -74,6 +74,11 @@ opacity: 0.9;
 background-color: #5d725a;
 margin-top: 20px;
 }
+.btn-secondary {
+background-color: #a0b29d;
+margin-top: 5px;
+font-size: 0.85rem;
+}
 input, select {
 width: 100%;
 padding: 10px;
@@ -149,6 +154,15 @@ font-size: 1.1rem;
 border-bottom: 2px solid var(--text-color);
 padding-bottom: 5px;
 }
+.user-info-box {
+background-color: rgba(121, 142, 118, 0.1);
+border: 1px dashed var(--text-color);
+border-radius: 8px;
+padding: 10px;
+margin-bottom: 15px;
+font-size: 0.85rem;
+text-align: left;
+}
 .sync-status {
 font-size: 0.75rem;
 color: #5d725a;
@@ -161,6 +175,10 @@ margin-top: 15px;
 <div id="screen-home" class="container">
 <img src="logo-benzibar.png" alt="Logo Benzibar" class="brand-logo" onerror="this.style.display='none'">
 <h1 class="brand-name">benzibar</h1>
+<div id="user-info-banner" class="user-info-box hidden">
+<span>Utente: <b id="user-display-name"></b></span>
+<button class="btn-secondary" onclick="goToScreen('screen-user-register')" style="margin-top:5px; padding: 5px 10px;">Modifica Dati Profilo</button>
+</div>
 <div id="user-active-events-section" class="hidden">
 <h3 class="section-subtitle">I TUOI EVENTI</h3>
 <div id="home-user-events-list"></div>
@@ -202,14 +220,14 @@ margin-top: 15px;
 <div id="staff-management-content"></div>
 <button class="btn-home" onclick="goToScreen('screen-staff-dashboard')">INDIETRO</button>
 </div>
-<!-- SCHERMATA REGISTRAZIONE UTENTE (PRIMA VOLTA) -->
+<!-- SCHERMATA REGISTRAZIONE UTENTE -->
 <div id="screen-user-register" class="container hidden">
-<h2>REGISTRAZIONE UTENTE</h2>
-<p>Inserisci i tuoi dati (richiesto solo la prima volta):</p>
+<h2>PROFILO UTENTE</h2>
+<p>Inserisci o aggiorna i tuoi dati di registrazione:</p>
 <input type="text" id="reg-name" placeholder="Nome">
 <input type="text" id="reg-surname" placeholder="Cognome">
 <input type="text" id="reg-phone" placeholder="Telefono">
-<button onclick="saveUserProfile()">REGISTRATI E CONTINUA</button>
+<button onclick="saveUserProfile()">SALVA E CONTINUA</button>
 <button class="btn-home" onclick="goToScreen('screen-home')">HOME</button>
 </div>
 <!-- SCHERMATA PROSSIMI EVENTI (UTENTE) -->
@@ -235,7 +253,7 @@ dbRef = firebase.database().ref();
 } catch(e) {
 console.log("Errore inizializzazione Firebase");
 }
-// Recupera eventuale utente salvato in locale sul telefono
+// Recupera profilazione locale
 let savedUserRaw = localStorage.getItem('benzibar_user_profile');
 let localUserProfile = savedUserRaw ? JSON.parse(savedUserRaw) : null;
 let db = {
@@ -252,9 +270,11 @@ db.users = data.users || {};
 db.events = data.events || {};
 db.registrations = data.registrations || {};
 document.getElementById('sync-indicator').innerText = "🟢 Sincronizzato in tempo reale";
-// Se abbiamo i dati utente in locale, assicuriamoci che siano sempre presenti su Firebase
+// Se abbiamo i dati utente in locale, assicuriamoci che siano registrati su Firebase
 if (localUserProfile && localUserProfile.phone) {
-if (!db.users[localUserProfile.phone]) {
+if (!db.users[localUserProfile.phone] ||
+db.users[localUserProfile.phone].name !== localUserProfile.name ||
+db.users[localUserProfile.phone].surname !== localUserProfile.surname) {
 db.users[localUserProfile.phone] = localUserProfile;
 saveCloud();
 }
@@ -295,11 +315,24 @@ if (screenId === 'screen-home') {
 updateHomeView();
 } else if (screenId === 'screen-events') {
 renderPublicEvents();
+} else if (screenId === 'screen-user-register') {
+if (localUserProfile) {
+document.getElementById('reg-name').value = localUserProfile.name || '';
+document.getElementById('reg-surname').value = localUserProfile.surname || '';
+document.getElementById('reg-phone').value = localUserProfile.phone || '';
+}
 }
 }
 function updateHomeView() {
 const activeSection = document.getElementById('user-active-events-section');
 const listDiv = document.getElementById('home-user-events-list');
+const userInfoBanner = document.getElementById('user-info-banner');
+if (localUserProfile && localUserProfile.name) {
+document.getElementById('user-display-name').innerText = ⁠${localUserProfile.name} ${localUserProfile.surname} (${localUserProfile.phone})⁠;
+userInfoBanner.classList.remove('hidden');
+} else {
+userInfoBanner.classList.add('hidden');
+}
 if (!db.currentUserPhone) {
 activeSection.classList.add('hidden');
 return;
@@ -438,15 +471,15 @@ html += ⁠<button onclick="exportTableToCSV('${tableId}', 'elenco_iscritti_${ev
 if (ev.type === 'Torneo Burraco') {
 html += ⁠<table id="${tableId}"> <tr><th>Nome Cognome</th><th>Telefono</th><th>Compagno (Nome Cognome)</th></tr>⁠;
 eventRegs.forEach(r => {
-let u = db.users[r.userPhone];
-let fullName = (r.userName && r.userSurname) ? ⁠${r.userName} ${r.userSurname}⁠ : (u ? ⁠${u.name} ${u.surname}⁠ : 'Utente Sconosciuto');
+let u = db.users[r.userPhone] || {};
+let fullName = (r.userName && r.userSurname) ? ⁠${r.userName} ${r.userSurname}⁠ : ((u.name && u.surname) ? ⁠${u.name} ${u.surname}⁠ : 'Utente');
 html += ⁠<tr><td>${fullName}</td><td>${r.userPhone}</td><td>${r.partner || 'Senza compagno'}</td></tr>⁠;
 });
 } else {
 html += ⁠<table id="${tableId}"> <tr><th>Nome Cognome</th><th>Telefono</th><th>Accompagnatori</th></tr>⁠;
 eventRegs.forEach(r => {
-let u = db.users[r.userPhone];
-let fullName = (r.userName && r.userSurname) ? ⁠${r.userName} ${r.userSurname}⁠ : (u ? ⁠${u.name} ${u.surname}⁠ : 'Utente Sconosciuto');
+let u = db.users[r.userPhone] || {};
+let fullName = (r.userName && r.userSurname) ? ⁠${r.userName} ${r.userSurname}⁠ : ((u.name && u.surname) ? ⁠${u.name} ${u.surname}⁠ : 'Utente');
 html += ⁠<tr><td>${fullName}</td><td>${r.userPhone}</td><td>${r.companions || 0}</td></tr>⁠;
 });
 }
@@ -472,7 +505,7 @@ downloadLink.click();
 document.body.removeChild(downloadLink);
 }
 function accessEventsFlow() {
-if (localUserProfile && localUserProfile.phone) {
+if (localUserProfile && localUserProfile.phone && localUserProfile.name) {
 db.currentUserPhone = localUserProfile.phone;
 goToScreen('screen-events');
 } else if (db.currentUserPhone && db.users[db.currentUserPhone]) {
@@ -495,8 +528,13 @@ localUserProfile = { name, surname, phone };
 db.users[phone] = localUserProfile;
 db.currentUserPhone = phone;
 saveCloud();
-alert('Registrazione completata!');
+alert('Profilo salvato correttamente!');
 goToScreen('screen-events');
+}
+function getActiveUserObj() {
+if (localUserProfile && localUserProfile.name) return localUserProfile;
+if (db.currentUserPhone && db.users[db.currentUserPhone]) return db.users[db.currentUserPhone];
+return { name: '', surname: '', phone: db.currentUserPhone || '' };
 }
 function renderPublicEvents() {
 const container = document.getElementById('public-events-list');
@@ -538,7 +576,7 @@ const partnerInput = document.getElementById(⁠partner-${eventId}⁠);
 const noPartnerCheckbox = document.getElementById(⁠nopot-${eventId}⁠);
 const partnerName = noPartnerCheckbox.checked ? 'Senza compagno' : partnerInput.value.trim();
 const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
-const u = localUserProfile || db.users[db.currentUserPhone] || {};
+const u = getActiveUserObj();
 db.registrations[regId] = {
 eventId: eventId,
 userPhone: db.currentUserPhone,
@@ -556,7 +594,7 @@ function participateAltro(eventId) {
 const companionsInput = document.getElementById(⁠companions-${eventId}⁠);
 const companionsCount = parseInt(companionsInput.value) || 0;
 const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
-const u = localUserProfile || db.users[db.currentUserPhone] || {};
+const u = getActiveUserObj();
 db.registrations[regId] = {
 eventId: eventId,
 userPhone: db.currentUserPhone,
@@ -595,6 +633,9 @@ const partnerVal = document.getElementById('edit-partner').value.trim();
 const noPot = document.getElementById('edit-nopot').checked;
 const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
 if (db.registrations[regId]) {
+const u = getActiveUserObj();
+db.registrations[regId].userName = u.name || '';
+db.registrations[regId].userSurname = u.surname || '';
 db.registrations[regId].partner = noPot ? 'Senza compagno' : partnerVal;
 db.registrations[regId].withoutPartner = noPot;
 saveCloud();
@@ -606,6 +647,9 @@ function saveEditAltro(eventId) {
 const compCount = parseInt(document.getElementById('edit-companions').value) || 0;
 const regId = 'reg_' + eventId + '_' + db.currentUserPhone;
 if (db.registrations[regId]) {
+const u = getActiveUserObj();
+db.registrations[regId].userName = u.name || '';
+db.registrations[regId].userSurname = u.surname || '';
 db.registrations[regId].companions = compCount;
 saveCloud();
 alert('Modifiche salvate con successo!');
